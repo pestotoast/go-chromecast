@@ -135,7 +135,7 @@ func (h *Handler) listDevices(w http.ResponseWriter, r *http.Request) {
 	devices := h.discoverDnsEntries(context.Background(), iface, wait)
 	h.log("found %d devices", len(devices))
 
-	w.Header().Add("Content-Type", "application/json")
+	addResponseHeaders(w)	
 	if err := json.NewEncoder(w).Encode(devices); err != nil {
 		h.log("error encoding json: %v", err)
 		httpError(w, fmt.Errorf("unable to json encode devices: %v", err))
@@ -216,7 +216,7 @@ func (h *Handler) connect(w http.ResponseWriter, r *http.Request) {
 	h.apps[deviceUUID] = app
 	h.mu.Unlock()
 
-	w.Header().Add("Content-Type", "application/json")
+	addResponseHeaders(w)
 	if err := json.NewEncoder(w).Encode(connectResponse{DeviceUUID: deviceUUID}); err != nil {
 		h.log("error encoding json: %v", err)
 		httpError(w, fmt.Errorf("unable to json encode devices: %v", err))
@@ -279,7 +279,7 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 		castVolume,
 	)
 
-	w.Header().Add("Content-Type", "application/json")
+	addResponseHeaders(w)
 	if err := json.NewEncoder(w).Encode(statusResponse); err != nil {
 		h.log("error encoding json: %v", err)
 		httpError(w, fmt.Errorf("unable to json encode devices: %v", err))
@@ -383,7 +383,7 @@ func (h *Handler) volume(w http.ResponseWriter, r *http.Request) {
 		h.log("getting volume for device")
 		_, _, volume := app.Status()
 
-		w.Header().Add("Content-Type", "application/json")
+		addResponseHeaders(w)
 		if err := json.NewEncoder(w).Encode(volumeResponse{Level: volume.Level, Muted: volume.Muted}); err != nil {
 			h.log("error encoding json: %v", err)
 			httpError(w, fmt.Errorf("unable to json encode devices: %v", err))
@@ -560,4 +560,9 @@ func httpError(w http.ResponseWriter, err error) {
 
 func httpValidationError(w http.ResponseWriter, msg string) {
 	http.Error(w, msg, http.StatusBadRequest)
+}
+
+func addResponseHeaders(w http.ResponseWriter){
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
 }
